@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Saved — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex min-h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh] sticky top-0" id="sidebar-nav"></aside>
+
+  <main class="flex-1 pb-24 md:pb-10 page-fade-in">
+    <div class="max-w-3xl mx-auto px-4 pt-6 md:pt-8">
+      <h1 class="text-2xl font-black mb-1">Saved</h1>
+      <p class="text-sm text-secondary mb-6">Videos you've bookmarked to watch again.</p>
+
+      <div id="saved-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+      <div id="saved-empty" class="hidden flex-col items-center justify-center gap-2 text-secondary py-20 text-center">
+        <i data-lucide="bookmark" class="w-10 h-10"></i>
+        <p class="font-semibold">Nothing saved yet</p>
+        <p class="text-sm">Tap the bookmark icon on any video to save it here.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    UI.init('saved.html');
+    render();
+  });
+
+  function render() {
+    const saves = Store.getSaves();
+    const ids = Object.keys(saves);
+    const grid = document.getElementById('saved-grid');
+    const empty = document.getElementById('saved-empty');
+
+    if (ids.length === 0) {
+      grid.classList.add('hidden');
+      empty.classList.remove('hidden');
+      empty.classList.add('flex');
+      return;
+    }
+    grid.classList.remove('hidden');
+    empty.classList.add('hidden');
+
+    grid.innerHTML = ids.map(id => {
+      const s = Store.getSaveSnapshot(id) || {};
+      return `
+      <div class="relative aspect-[9/16] rounded-xl overflow-hidden bg-black/40 group" data-id="${id}">
+        <img src="${s.poster || ''}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+        <p class="absolute bottom-2 left-2 right-2 text-white text-xs font-medium line-clamp-2">${s.description || ''}</p>
+        <p class="absolute top-2 left-2 text-white text-[11px] font-semibold">@${s.creator || 'creator'}</p>
+        <button class="remove-save-btn absolute top-2 right-2 bg-black/50 rounded-full p-1.5 text-white" data-id="${id}">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>`;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons({ nodes: [grid] });
+    grid.querySelectorAll('.remove-save-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.toggleSave(btn.dataset.id);
+        Store.bumpVideoMeta(btn.dataset.id, { saves: -1 });
+        UI.toast('Removed from saved');
+        render();
+      });
+    });
+  }
+</script>
+</body>
+</html>

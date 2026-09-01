@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Profile — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex min-h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh] sticky top-0" id="sidebar-nav"></aside>
+
+  <main class="flex-1 pb-24 md:pb-10 page-fade-in">
+    <div class="max-w-2xl mx-auto px-4 pt-8">
+
+      <div class="flex flex-col items-center text-center mb-6">
+        <img id="profile-avatar" src="" class="w-24 h-24 rounded-full object-cover ring-4 ring-[#FF1744]/20 mb-3">
+        <h1 id="profile-display-name" class="text-xl font-black"></h1>
+        <p id="profile-username" class="text-sm text-secondary mb-3"></p>
+
+        <div class="flex items-center gap-6 mb-4">
+          <div class="text-center"><p id="profile-following" class="font-bold">0</p><p class="text-xs text-secondary">Following</p></div>
+          <div class="text-center"><p id="profile-followers" class="font-bold">0</p><p class="text-xs text-secondary">Followers</p></div>
+          <div class="text-center"><p id="profile-likes" class="font-bold">0</p><p class="text-xs text-secondary">Likes</p></div>
+        </div>
+
+        <p id="profile-bio" class="text-sm max-w-sm mb-4"></p>
+
+        <button id="profile-edit-btn" class="hidden px-6 py-2 rounded-full muted-surface text-sm font-semibold">Edit profile</button>
+        <button id="profile-follow-btn" class="hidden px-8 py-2 rounded-full text-sm font-semibold text-white brand-gradient">
+          <span class="follow-state">Follow</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-6 border-b border-subtle mb-3 text-sm font-semibold">
+        <span class="py-2 border-b-2 border-[#FF1744] text-[#FF1744] flex items-center gap-1.5"><i data-lucide="grid-3x3" class="w-4 h-4"></i>Videos</span>
+      </div>
+
+      <div id="video-grid" class="grid grid-cols-3 gap-1.5"></div>
+      <div id="video-grid-empty" class="hidden flex-col items-center justify-center gap-2 text-secondary py-16 text-center">
+        <i data-lucide="film" class="w-10 h-10"></i>
+        <p class="font-semibold">No videos yet</p>
+        <p class="text-sm">Videos you upload on the Create page will show up here.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<!-- Edit profile modal -->
+<div id="edit-profile-modal" class="fixed inset-0 z-[70] flex items-end md:items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+  <div id="edit-profile-backdrop" class="absolute inset-0 bg-black/60"></div>
+  <form id="edit-profile-form" class="relative surface w-full md:w-96 md:rounded-2xl rounded-t-2xl p-5 pb-8 md:pb-5 z-10">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-lg">Edit profile</h3>
+      <button type="button" id="edit-profile-close" class="p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="flex flex-col gap-3">
+      <div>
+        <label class="text-xs font-semibold text-secondary">Avatar seed</label>
+        <div class="flex gap-2">
+          <input name="avatarSeed" class="flex-1 muted-surface rounded-xl px-3 py-2.5 text-sm outline-none" placeholder="avatar-style">
+          <button type="button" id="shuffle-avatar" class="px-3 rounded-xl muted-surface"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-secondary">Username</label>
+        <input name="username" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none" placeholder="username">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-secondary">Display name</label>
+        <input name="displayName" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none" placeholder="Display name">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-secondary">Bio</label>
+        <textarea name="bio" rows="2" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none resize-none" placeholder="Tell people about yourself"></textarea>
+      </div>
+      <button type="submit" class="mt-1 w-full py-2.5 rounded-xl brand-gradient text-white font-semibold text-sm">Save changes</button>
+    </div>
+  </form>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/profile.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    UI.init('profile.html');
+    ProfilePage.init();
+  });
+</script>
+</body>
+</html>

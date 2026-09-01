@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Settings — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .switch { width: 42px; height: 24px; border-radius: 999px; position: relative; transition: background .2s; cursor: pointer; }
+  .switch-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 999px; background: white; transition: transform .2s; }
+  .switch.on { background: linear-gradient(90deg, #FF1744, #FF6D00); }
+  .switch.off { background: var(--bg-muted); }
+  .switch.on .switch-knob { transform: translateX(18px); }
+</style>
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex min-h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh] sticky top-0" id="sidebar-nav"></aside>
+
+  <main class="flex-1 pb-24 md:pb-10 page-fade-in">
+    <div class="max-w-xl mx-auto px-4 pt-6 md:pt-8">
+      <h1 class="text-2xl font-black mb-6">Settings</h1>
+
+      <section class="mb-6">
+        <h2 class="text-xs font-bold text-secondary uppercase tracking-wide mb-2 px-1">Playback</h2>
+        <div class="surface rounded-2xl divide-y divide-subtle overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3.5">
+            <div class="flex items-center gap-3"><i data-lucide="moon" class="w-4 h-4"></i><span class="text-sm font-medium">Dark mode</span></div>
+            <div id="switch-theme" class="switch"><div class="switch-knob"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3.5">
+            <div class="flex items-center gap-3"><i data-lucide="play-circle" class="w-4 h-4"></i><span class="text-sm font-medium">Autoplay videos</span></div>
+            <div id="switch-autoplay" class="switch"><div class="switch-knob"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3.5">
+            <div class="flex items-center gap-3"><i data-lucide="volume-2" class="w-4 h-4"></i><span class="text-sm font-medium">Sound on by default</span></div>
+            <div id="switch-sound" class="switch"><div class="switch-knob"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3.5">
+            <div class="flex items-center gap-3"><i data-lucide="gauge" class="w-4 h-4"></i><span class="text-sm font-medium">Data saver</span></div>
+            <div id="switch-datasaver" class="switch"><div class="switch-knob"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-6">
+        <h2 class="text-xs font-bold text-secondary uppercase tracking-wide mb-2 px-1">Data</h2>
+        <div class="surface rounded-2xl divide-y divide-subtle overflow-hidden">
+          <button id="clear-history-btn" class="w-full flex items-center justify-between px-4 py-3.5 text-left">
+            <span class="text-sm font-medium">Clear search history</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-secondary"></i>
+          </button>
+          <button id="clear-all-btn" class="w-full flex items-center justify-between px-4 py-3.5 text-left">
+            <span class="text-sm font-medium text-[#FF1744]">Clear all local app data</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-secondary"></i>
+          </button>
+        </div>
+      </section>
+
+      <section class="mb-6">
+        <h2 class="text-xs font-bold text-secondary uppercase tracking-wide mb-2 px-1">About</h2>
+        <div class="surface rounded-2xl divide-y divide-subtle overflow-hidden">
+          <button id="about-btn" class="w-full flex items-center justify-between px-4 py-3.5 text-left">
+            <span class="text-sm font-medium">About TikReel</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-secondary"></i>
+          </button>
+          <button id="privacy-btn" class="w-full flex items-center justify-between px-4 py-3.5 text-left">
+            <span class="text-sm font-medium">Privacy information</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-secondary"></i>
+          </button>
+        </div>
+      </section>
+
+      <div id="info-panel" class="hidden surface rounded-2xl p-4 text-sm text-secondary leading-relaxed"></div>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    UI.init('settings.html');
+    syncSwitches();
+
+    wireSwitch('switch-theme', () => Store.getSettings().theme === 'light', () => {
+      UI.toggleTheme();
+      UI._renderSidebar();
+      syncSwitches();
+    });
+    wireSwitch('switch-autoplay', () => Store.getSettings().autoplay, () => {
+      const s = Store.getSettings(); s.autoplay = !s.autoplay; Store.saveSettings(s); syncSwitches();
+    });
+    wireSwitch('switch-sound', () => Store.getSettings().soundOn, () => {
+      const s = Store.getSettings(); s.soundOn = !s.soundOn; Store.saveSettings(s); syncSwitches();
+    });
+    wireSwitch('switch-datasaver', () => Store.getSettings().dataSaver, () => {
+      const s = Store.getSettings(); s.dataSaver = !s.dataSaver; Store.saveSettings(s); syncSwitches();
+    });
+
+    document.getElementById('clear-history-btn').addEventListener('click', () => {
+      Store.clearSearchHistory();
+      UI.toast('Search history cleared');
+    });
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('This clears all local TikReel data (likes, saves, follows, comments, profile, uploads) on this device. Continue?')) {
+        Store.clearAll();
+        VideoDB.getVideos().then(vids => vids.forEach(v => VideoDB.deleteVideo(v.id)));
+        UI.toast('Local app data cleared');
+        setTimeout(() => location.reload(), 700);
+      }
+    });
+
+    document.getElementById('about-btn').addEventListener('click', () => {
+      showInfo(`TikReel is an original, frontend-only short-video experience built with HTML, Tailwind CSS, and JavaScript. Videos are sourced from the Pexels Video API. All social interactions (likes, comments, follows, saves) are stored locally on your device — there is no backend or account system.`);
+    });
+    document.getElementById('privacy-btn').addEventListener('click', () => {
+      showInfo(`TikReel does not run a server and does not transmit your activity anywhere. Profile info, likes, comments, follows, saves, notifications, and messages are stored in your browser's localStorage and IndexedDB only. Clearing your browser data — or using "Clear all local app data" above — permanently removes this information. Video requests are sent directly to the Pexels API using a key embedded in this site's JavaScript, which is standard for demos but not appropriate for handling private data in production.`);
+    });
+  });
+
+  function showInfo(text) {
+    const panel = document.getElementById('info-panel');
+    panel.textContent = text;
+    panel.classList.remove('hidden');
+  }
+
+  function wireSwitch(id, getOn, onToggle) {
+    document.getElementById(id).addEventListener('click', onToggle);
+  }
+  function syncSwitches() {
+    const s = Store.getSettings();
+    setSwitch('switch-theme', s.theme === 'light');
+    setSwitch('switch-autoplay', s.autoplay);
+    setSwitch('switch-sound', s.soundOn);
+    setSwitch('switch-datasaver', s.dataSaver);
+  }
+  function setSwitch(id, on) {
+    const el = document.getElementById(id);
+    el.classList.toggle('on', !!on);
+    el.classList.toggle('off', !on);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Inbox — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh]" id="sidebar-nav"></aside>
+
+  <main class="flex-1 flex h-[100dvh] overflow-hidden page-fade-in">
+    <!-- Thread list -->
+    <div id="thread-list-panel" class="w-full md:w-80 flex-shrink-0 border-r border-subtle h-full overflow-y-auto pb-20 md:pb-4">
+      <h1 class="text-xl font-black px-4 pt-6 pb-4">Inbox</h1>
+      <div id="thread-list" class="flex flex-col"></div>
+    </div>
+
+    <!-- Chat window -->
+    <div id="chat-panel" class="hidden md:flex flex-col flex-1 h-full">
+      <div id="chat-header" class="flex items-center gap-3 px-4 py-3 border-b border-subtle">
+        <button id="chat-back" class="md:hidden p-1"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+        <img id="chat-avatar" src="" class="w-9 h-9 rounded-full object-cover">
+        <span id="chat-name" class="font-semibold text-sm"></span>
+      </div>
+      <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2"></div>
+      <div class="flex items-center gap-2 px-4 py-3 border-t border-subtle">
+        <input id="chat-input" type="text" placeholder="Message..." class="flex-1 muted-surface rounded-full px-4 py-2.5 text-sm outline-none">
+        <button id="chat-send" class="w-9 h-9 rounded-full brand-gradient flex items-center justify-center flex-shrink-0"><i data-lucide="send" class="w-4 h-4 text-white"></i></button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  let activeThreadId = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    UI.init('messages.html');
+    renderThreads();
+
+    document.getElementById('chat-back').addEventListener('click', () => {
+      document.getElementById('chat-panel').classList.add('hidden');
+      document.getElementById('thread-list-panel').classList.remove('hidden');
+    });
+    document.getElementById('chat-send').addEventListener('click', sendMessage);
+    document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+  });
+
+  function renderThreads() {
+    const threads = Store.getMessages();
+    const list = document.getElementById('thread-list');
+    const ids = Object.keys(threads);
+    if (ids.length === 0) {
+      list.innerHTML = `<p class="text-sm text-secondary px-4 py-8 text-center">No conversations yet.</p>`;
+      return;
+    }
+    list.innerHTML = ids.map(id => {
+      const t = threads[id];
+      const last = t.messages[t.messages.length - 1];
+      return `
+      <button class="thread-item flex items-center gap-3 px-4 py-3 text-left hover:muted-surface transition" data-id="${id}">
+        <img src="${t.avatar}" class="w-11 h-11 rounded-full object-cover flex-shrink-0">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold">${t.name}</p>
+          <p class="text-xs text-secondary truncate">${last ? last.text : ''}</p>
+        </div>
+        ${last ? `<span class="text-[10px] text-secondary flex-shrink-0">${timeAgo(last.at)}</span>` : ''}
+      </button>`;
+    }).join('');
+    list.querySelectorAll('.thread-item').forEach(btn => {
+      btn.addEventListener('click', () => openThread(btn.dataset.id));
+    });
+  }
+
+  function openThread(id) {
+    activeThreadId = id;
+    const t = Store.getMessages()[id];
+    document.getElementById('chat-panel').classList.remove('hidden');
+    document.getElementById('chat-panel').classList.add('flex');
+    if (window.innerWidth < 768) document.getElementById('thread-list-panel').classList.add('hidden');
+    document.getElementById('chat-avatar').src = t.avatar;
+    document.getElementById('chat-name').textContent = t.name;
+    renderMessages(t);
+  }
+
+  function renderMessages(t) {
+    const wrap = document.getElementById('chat-messages');
+    wrap.innerHTML = t.messages.map(m => `
+      <div class="flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${m.from === 'me' ? 'brand-gradient text-white' : 'muted-surface'}">
+          ${escapeMsg(m.text)}
+        </div>
+      </div>
+    `).join('');
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !activeThreadId) return;
+    Store.sendMessage(activeThreadId, text);
+    input.value = '';
+    const t = Store.getMessages()[activeThreadId];
+    renderMessages(t);
+    renderThreads();
+
+    // Small local "reply" so the inbox feels alive, purely client-side.
+    setTimeout(() => {
+      const threads = Store.getMessages();
+      threads[activeThreadId].messages.push({ from: 'them', text: 'Got it! 👍', at: Date.now() });
+      Store._set(LS_KEYS.MESSAGES, threads);
+      renderMessages(threads[activeThreadId]);
+      renderThreads();
+    }, 1200);
+  }
+
+  function escapeMsg(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return 'now';
+    if (s < 3600) return Math.floor(s / 60) + 'm';
+    if (s < 86400) return Math.floor(s / 3600) + 'h';
+    return Math.floor(s / 86400) + 'd';
+  }
+</script>
+</body>
+</html>

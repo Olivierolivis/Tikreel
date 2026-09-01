@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TikReel — Watch short videos</title>
+<meta name="description" content="TikReel — an original short-video experience. Watch, like, comment and discover.">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } },
+        fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans overflow-hidden" style="background:var(--bg-app)">
+
+<div class="flex h-[100dvh] w-full">
+
+  <!-- Desktop sidebar -->
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh]" id="sidebar-nav"></aside>
+
+  <!-- Main content -->
+  <main class="relative flex-1 h-[100dvh] overflow-hidden">
+    <!-- Mobile top bar -->
+    <div class="md:hidden absolute top-0 inset-x-0 z-40 flex items-center justify-between px-4 pt-3 pointer-events-none">
+      <span class="text-lg font-black text-white drop-shadow flex items-center gap-1.5 pointer-events-auto">
+        <span class="w-6 h-6 rounded-lg brand-gradient flex items-center justify-center"><i data-lucide="play" class="w-3.5 h-3.5 text-white fill-white"></i></span>
+        TikReel
+      </span>
+      <a href="discover.html" class="pointer-events-auto text-white drop-shadow"><i data-lucide="search" class="w-5 h-5"></i></a>
+    </div>
+
+    <div id="context-bar" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-40 items-center gap-2 bg-black/50 backdrop-blur text-white text-sm font-semibold px-4 py-1.5 rounded-full">
+      <i data-lucide="arrow-left" class="w-4 h-4 cursor-pointer" onclick="window.location.href='discover.html'"></i>
+      <span id="context-bar-label"></span>
+    </div>
+
+    <div id="feed-container" class="w-full h-full flex flex-col items-center">
+      <!-- video cards injected by app.js -->
+    </div>
+  </main>
+</div>
+
+<!-- Mobile bottom nav -->
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<!-- Comments bottom sheet -->
+<div id="comments-backdrop" class="fixed inset-0 z-[60] bg-black/60 opacity-0 pointer-events-none transition-opacity duration-200"></div>
+<div id="comments-sheet" class="fixed bottom-0 inset-x-0 z-[61] surface rounded-t-2xl translate-y-full sheet-transition md:max-w-md md:mx-auto max-h-[75vh] flex flex-col">
+  <div class="flex items-center justify-between px-4 pt-4 pb-2 border-b border-subtle">
+    <span id="comments-count" class="font-bold text-sm">0 comments</span>
+    <button id="comments-close" class="p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+  </div>
+  <div id="comments-list" class="flex-1 overflow-y-auto px-4"></div>
+  <div class="flex items-center gap-2 px-4 py-3 border-t border-subtle">
+    <img src="" id="comment-input-avatar" class="w-8 h-8 rounded-full hidden">
+    <input id="comment-input" type="text" placeholder="Add a comment..." class="flex-1 muted-surface rounded-full px-4 py-2.5 text-sm outline-none">
+    <button id="comment-send" class="w-9 h-9 rounded-full brand-gradient flex items-center justify-center flex-shrink-0">
+      <i data-lucide="send" class="w-4 h-4 text-white"></i>
+    </button>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/comments.js"></script>
+<script src="js/player.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

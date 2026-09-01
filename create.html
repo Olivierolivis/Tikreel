@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Create — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex min-h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh] sticky top-0" id="sidebar-nav"></aside>
+
+  <main class="flex-1 pb-24 md:pb-10 page-fade-in">
+    <div class="max-w-3xl mx-auto px-4 pt-6 md:pt-8">
+      <h1 class="text-2xl font-black mb-1">Create</h1>
+      <p class="text-sm text-secondary mb-3">Videos you publish here are stored on this device only, using IndexedDB.</p>
+      <div class="flex items-start gap-2 text-xs text-secondary muted-surface rounded-xl p-3 mb-6">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+        <p>Without a backend, uploaded videos are not shared with anyone else and only persist in this browser on this device. Clearing browser data or using "Clear all local app data" in Settings will remove them.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Upload / preview -->
+        <div>
+          <label id="drop-zone" class="flex flex-col items-center justify-center gap-2 muted-surface rounded-2xl aspect-[9/16] cursor-pointer border-2 border-dashed border-subtle hover:border-[#FF1744]/50 transition relative overflow-hidden">
+            <input id="file-input" type="file" accept="video/*" class="hidden">
+            <div id="upload-prompt" class="flex flex-col items-center gap-2 text-secondary px-6 text-center">
+              <span class="w-12 h-12 rounded-full brand-gradient flex items-center justify-center"><i data-lucide="upload" class="w-5 h-5 text-white"></i></span>
+              <p class="text-sm font-semibold">Select a video to upload</p>
+              <p class="text-xs">MP4 recommended · vertical works best</p>
+            </div>
+            <video id="preview-video" class="hidden absolute inset-0 w-full h-full object-cover" controls loop></video>
+          </label>
+        </div>
+
+        <!-- Form -->
+        <form id="publish-form" class="flex flex-col gap-4">
+          <div>
+            <label class="text-xs font-semibold text-secondary">Description</label>
+            <textarea name="description" rows="3" maxlength="200" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none resize-none" placeholder="Describe your video..."></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-secondary">Hashtags</label>
+            <input name="hashtags" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none" placeholder="#travel #sunset #vibes">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-secondary">Privacy</label>
+            <select name="privacy" class="w-full muted-surface rounded-xl px-3 py-2.5 text-sm outline-none">
+              <option value="public">Public — anyone on this device's feed</option>
+              <option value="private">Private — only visible on your profile</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between muted-surface rounded-xl px-3 py-2.5">
+            <span class="text-sm font-medium">Allow comments</span>
+            <input type="checkbox" name="commentsOn" checked class="w-5 h-5 accent-[#FF1744]">
+          </div>
+          <button type="submit" id="publish-btn" disabled class="mt-2 w-full py-3 rounded-xl brand-gradient text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+            Publish
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  let selectedFile = null;
+  let objectUrl = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    UI.init('create.html');
+
+    const fileInput = document.getElementById('file-input');
+    const previewVideo = document.getElementById('preview-video');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const publishBtn = document.getElementById('publish-btn');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('video/')) {
+        UI.toast('Please select a video file');
+        return;
+      }
+      selectedFile = file;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      previewVideo.src = objectUrl;
+      previewVideo.classList.remove('hidden');
+      uploadPrompt.classList.add('hidden');
+      previewVideo.muted = true;
+      previewVideo.play().catch(() => {});
+      publishBtn.disabled = false;
+    });
+
+    document.getElementById('publish-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedFile) return;
+      publishBtn.disabled = true;
+      publishBtn.textContent = 'Publishing...';
+
+      const form = e.target;
+      const description = form.description.value.trim();
+      const hashtags = form.hashtags.value.trim().split(/\s+/).filter(t => t.startsWith('#'));
+      const privacy = form.privacy.value;
+      const commentsOn = form.commentsOn.checked;
+
+      const id = 'local_' + Date.now();
+      try {
+        await VideoDB.saveVideo({
+          id,
+          objectUrl,
+          fileName: selectedFile.name,
+          description: description || 'My new video',
+          tags: hashtags,
+          privacy,
+          commentsOn,
+          createdAt: Date.now(),
+        });
+        Store.addNotification('Your video was published', 'circle-plus');
+        UI.toast('Video published to your profile');
+        setTimeout(() => window.location.href = 'profile.html', 900);
+      } catch (err) {
+        UI.toast('Could not save video — storage may be full');
+        publishBtn.disabled = false;
+        publishBtn.textContent = 'Publish';
+      }
+    });
+  });
+</script>
+</body>
+</html>

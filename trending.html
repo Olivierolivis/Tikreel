@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Trending — TikReel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { colors: { tikreel: { red: '#FF1744', orange: '#FF6D00', black: '#080808' } }, fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-sans" style="background:var(--bg-app)">
+
+<div class="flex min-h-[100dvh] w-full">
+  <aside class="hidden md:flex flex-col w-64 flex-shrink-0 border-r border-subtle px-3 py-4 h-[100dvh] sticky top-0" id="sidebar-nav"></aside>
+
+  <main class="flex-1 pb-24 md:pb-10 page-fade-in">
+    <div class="max-w-3xl mx-auto px-4 pt-6 md:pt-8">
+      <h1 class="text-2xl font-black mb-1">Trending</h1>
+      <p class="text-sm text-secondary mb-6">Ranked using your local activity — views, likes, comments, and saves.</p>
+
+      <section class="mb-8">
+        <h2 class="text-sm font-bold mb-3 flex items-center gap-1.5"><i data-lucide="hash" class="w-4 h-4 text-[#FF1744]"></i>Trending hashtags</h2>
+        <div id="hashtag-cards" class="flex gap-2 overflow-x-auto pb-1"></div>
+      </section>
+
+      <section class="mb-8">
+        <h2 class="text-sm font-bold mb-3 flex items-center gap-1.5"><i data-lucide="trophy" class="w-4 h-4 text-[#FF6D00]"></i>Top ranked (your activity)</h2>
+        <div id="ranked-list" class="flex flex-col gap-2"></div>
+        <p id="ranked-empty" class="text-sm text-secondary py-6 hidden">Like, comment, or save a few videos on the Home feed — they'll show up ranked here.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold mb-3 flex items-center gap-1.5"><i data-lucide="flame" class="w-4 h-4 text-[#FF1744]"></i>Popular on TikReel</h2>
+        <div id="popular-grid" class="grid grid-cols-3 gap-1.5"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-40 surface border-t border-subtle flex items-center justify-around px-2 py-2 backdrop-blur"></nav>
+
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    UI.init('trending.html');
+
+    const hashtags = await Api.getTrendingHashtags();
+    document.getElementById('hashtag-cards').innerHTML = hashtags.map(h => `
+      <a href="index.html?search=${encodeURIComponent(h.replace('#',''))}" class="flex-shrink-0 brand-gradient text-white text-xs font-bold px-4 py-2 rounded-full">${h}</a>
+    `).join('');
+
+    // Local ranking from recorded engagement
+    const meta = Store.getAllVideoMeta();
+    const entries = Object.entries(meta)
+      .map(([id, m]) => ({ id, m, score: computeTrendingScore(m) }))
+      .filter(e => e.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    const rankedList = document.getElementById('ranked-list');
+    if (entries.length === 0) {
+      document.getElementById('ranked-empty').classList.remove('hidden');
+    } else {
+      rankedList.innerHTML = entries.map((e, i) => `
+        <div class="flex items-center gap-3 muted-surface rounded-xl px-4 py-3">
+          <span class="text-lg font-black w-6 text-center brand-text">${i + 1}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold truncate">Video ${e.id.replace('pexels_','#').replace('local_','local ')}</p>
+            <p class="text-xs text-secondary">${e.m.views||0} views · ${e.m.likes||0} likes · ${e.m.comments||0} comments · ${e.m.saves||0} saves</p>
+          </div>
+          <span class="text-xs font-bold text-[#FF1744]">${e.score} pts</span>
+        </div>
+      `).join('');
+    }
+
+    if (window.lucide) lucide.createIcons();
+
+    const grid = document.getElementById('popular-grid');
+    for (let i = 0; i < 9; i++) {
+      const sk = document.createElement('div');
+      sk.className = 'aspect-[9/16] rounded-md skeleton-shimmer';
+      grid.appendChild(sk);
+    }
+    try {
+      const videos = await Api.getPopularVideos(1, 12);
+      grid.innerHTML = videos.map(v => `
+        <a href="index.html?search=${encodeURIComponent((v.tags[0]||'trending').replace('#',''))}" class="relative aspect-[9/16] rounded-md overflow-hidden bg-black/40 group">
+          <img src="${v.poster}" class="w-full h-full object-cover group-hover:scale-105 transition" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        </a>
+      `).join('');
+    } catch (err) {
+      grid.innerHTML = `<p class="col-span-3 text-center text-secondary text-sm py-8">Unable to load videos. Try again.</p>`;
+    }
+  });
+</script>
+</body>
+</html>
