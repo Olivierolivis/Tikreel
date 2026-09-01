@@ -1,0 +1,148 @@
+/* ============================================================
+   TikReel — style.css
+   Theme variables + behaviors Tailwind's utility classes can't
+   express directly (scroll-snap, keyframes, shimmer, marquee).
+   ============================================================ */
+
+:root {
+  --tr-red: #FF1744;
+  --tr-orange: #FF6D00;
+  --tr-black: #080808;
+  --tr-white: #FFFFFF;
+
+  --bg-app: #080808;
+  --bg-surface: #131313;
+  --bg-muted: #1c1c1c;
+  --text-primary: #f5f5f5;
+  --text-secondary: rgba(245,245,245,0.6);
+  --border-subtle: rgba(255,255,255,0.08);
+}
+
+html.light {
+  --bg-app: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-muted: #F0F0F0;
+  --text-primary: #0d0d0d;
+  --text-secondary: rgba(13,13,13,0.55);
+  --border-subtle: rgba(0,0,0,0.08);
+}
+
+html, body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  overscroll-behavior-y: none;
+}
+
+* { scrollbar-width: thin; scrollbar-color: var(--tr-red) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb { background: linear-gradient(var(--tr-red), var(--tr-orange)); border-radius: 999px; }
+
+.surface { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+.muted-surface { background: var(--bg-muted); color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.border-subtle { border-color: var(--border-subtle); }
+
+.brand-text {
+  background: linear-gradient(90deg, var(--tr-red), var(--tr-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.brand-gradient { background: linear-gradient(90deg, var(--tr-red), var(--tr-orange)); }
+.brand-gradient-diag { background: linear-gradient(135deg, var(--tr-red), var(--tr-orange)); }
+
+/* ── Feed: scroll-snap vertical rail ─────────────────────── */
+#feed-container {
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+.video-card {
+  height: 100vh;
+  height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* ── Nav active states ───────────────────────────────────── */
+.nav-link { color: var(--text-secondary); }
+.nav-link:hover { background: var(--bg-muted); color: var(--text-primary); }
+.nav-active {
+  background: linear-gradient(90deg, rgba(255,23,68,0.12), rgba(255,109,0,0.08));
+  color: var(--tr-red) !important;
+  font-weight: 700;
+}
+.nav-mobile-inactive { color: var(--text-secondary); }
+
+/* ── Double-tap heart burst ──────────────────────────────── */
+.burst-heart {
+  transform: translate(-50%, -50%) scale(0.3);
+  opacity: 0;
+  filter: drop-shadow(0 4px 18px rgba(255,23,68,0.6));
+}
+.burst-heart-animate {
+  animation: heartBurst 0.85s cubic-bezier(.17,.89,.32,1.49) forwards;
+}
+@keyframes heartBurst {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  45% { transform: translate(-50%, -50%) scale(0.95); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
+}
+
+/* ── Small pulse used on like/save taps ─────────────────── */
+.pulse-anim { animation: pulseScale 0.35s ease; }
+@keyframes pulseScale {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+/* ── Toasts ───────────────────────────────────────────────── */
+.toast-item { opacity: 0; transform: translateY(-8px); transition: opacity .2s ease, transform .2s ease; }
+.toast-item.toast-in { opacity: 1; transform: translateY(0); }
+
+/* ── Bottom sheets (comments, share, edit-profile) ──────── */
+.sheet-transition { transition: transform 0.32s cubic-bezier(.32,.72,0,1); }
+
+/* ── Loading skeleton shimmer ─────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(100deg, #141414 30%, #1f1f1f 50%, #141414 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Scrolling audio-name marquee (subtle) ───────────────── */
+.marquee-text {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── Page transition fade ────────────────────────────────── */
+.page-fade-in { animation: pageFadeIn 0.28s ease; }
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Utility: line clamp (in case Tailwind CDN build lacks plugin) ── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
