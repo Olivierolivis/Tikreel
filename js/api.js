@@ -14,7 +14,7 @@
 // limiting, and only returns the fields the client needs. The
 // functions below are written so that swapping the base URL for
 // your own backend endpoint later requires no other code changes.
-const PEXELS_API_KEY = "YOUR_API_KEY_HERE";
+const PEXELS_API_KEY = "RZBtxGa0Q4Pxenusbpn2GrzOm1tt1lAqhxz7g885YqTvvOPjws0LOAij";
 const PEXELS_BASE = "https://api.pexels.com/videos";
 
 const CATEGORY_QUERIES = {
